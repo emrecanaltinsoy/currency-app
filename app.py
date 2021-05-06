@@ -4,6 +4,8 @@ import plotly.express as px
 import datetime
 import requests
 from bs4 import BeautifulSoup
+from fbprophet import Prophet
+from fbprophet.plot import plot_plotly
 
 st.write("""# Currency app""")
 
@@ -11,7 +13,7 @@ st.sidebar.header("User Input")
 
 option = st.sidebar.selectbox(
     "How would you like to do?",
-    ("View Historical Currency Charts", "Check current rates"),
+    ("View Historical Currency Charts", "Check current rates", "Forecast Prediction"),
 )
 
 
@@ -65,10 +67,23 @@ def scrape_currency():
     return curr_data, cols[1:]
 
 
+@st.cache
+def train_model(data, currency, period):
+    df_train = data[["date(y-m-d)", currency]]
+    df_train = df_train.iloc[-365*2 :]
+    df_train = df_train.rename(columns={"date(y-m-d)": "ds", currency: "y"})
+
+    m = Prophet()
+    m.fit(df_train)
+    future = m.make_future_dataframe(periods=period)
+    forecast = m.predict(future)
+
+    return forecast, m
+
+df_all, columns = read_data()
+
 if option == "View Historical Currency Charts":
     st.write("This app can be used to view historical **currency** charts!")
-
-    df_all, columns = read_data()
 
     date_range = st.date_input(
         "Choose date range",
@@ -112,3 +127,19 @@ elif option == "Check current rates":
 
         converted = selected / float(base)
         st.write(converted)
+
+elif option == "Forecast Prediction":
+    currency = st.selectbox("Select the currency for prediction", columns)
+
+    n_weeks = st.slider("Weeks of prediction", 4, 20, 8, 1)
+
+    ok = st.button("Predict")
+    if ok:
+        train_state = st.text("Training the model...")
+        pred, model = train_model(df_all, currency, period=n_weeks * 7)
+        train_state.text("Model training completed!!")
+
+        st.subheader("Forecast data")
+        fig1 = plot_plotly(model, pred)
+        st.plotly_chart(fig1)
+
