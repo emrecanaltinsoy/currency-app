@@ -10,24 +10,27 @@ st.write("""# Currency app""")
 st.sidebar.header("User Input")
 
 option = st.sidebar.selectbox(
-    "How would you like to do?", ("View Historical Currency Charts", "Check current rates")
+    "How would you like to do?",
+    ("View Historical Currency Charts", "Check current rates"),
 )
 
 
 @st.cache
-def read_data(date_range):
-
+def read_data():
     url = "https://raw.githubusercontent.com/emrecanaltinsoy/forex_data/main/forex_usd_data.csv"
     data = pd.read_csv(url)
+    cols = data.columns
+    return data, cols[1:]
 
+
+@st.cache
+def get_range(data, date_range):
     start_index = data.index[data["date(y-m-d)"] == str(date_range[0])].tolist()[0]
     end_index = data.index[data["date(y-m-d)"] == str(date_range[1])].tolist()[0]
     data = data.iloc[start_index : end_index + 1]
-
     cols = data.columns
     dates = data["date(y-m-d)"]
-
-    return data, cols[1:], dates
+    return data, dates
 
 
 @st.cache
@@ -65,21 +68,21 @@ def scrape_currency():
 if option == "View Historical Currency Charts":
     st.write("This app can be used to view historical **currency** charts!")
 
+    df_all, columns = read_data()
+
     date_range = st.date_input(
         "Choose date range",
         value=(
             datetime.date(2011, 1, 1),
-            datetime.date.today() - datetime.timedelta(1),
+            datetime.date(2011, 1, 1) + datetime.timedelta(df_all.shape[0] - 1),
         ),
         min_value=datetime.date(2011, 1, 1),
-        max_value=datetime.date.today() - datetime.timedelta(1),
+        max_value=datetime.date(2011, 1, 1) + datetime.timedelta(df_all.shape[0] - 1),
     )
 
-    df, columns, dates = read_data(date_range)
+    df, dates = get_range(df_all, date_range)
 
     selected_curr = st.multiselect("Select currencies", columns)
-
-    # st.write(df)
 
     ok = st.button("View")
     if ok:
