@@ -17,7 +17,7 @@ option = st.sidebar.selectbox(
 )
 
 
-@st.cache
+#@st.cache
 def read_data():
     url = "https://raw.githubusercontent.com/emrecanaltinsoy/forex_data/main/forex_usd_data.csv"
     data = pd.read_csv(url)
@@ -25,7 +25,7 @@ def read_data():
     return data, cols[1:]
 
 
-@st.cache
+#@st.cache
 def get_range(data, date_range):
     start_index = data.index[data["date(y-m-d)"] == str(date_range[0])].tolist()[0]
     end_index = data.index[data["date(y-m-d)"] == str(date_range[1])].tolist()[0]
@@ -35,7 +35,7 @@ def get_range(data, date_range):
     return data, dates
 
 
-@st.cache
+#@st.cache
 def scrape_currency():
     today = datetime.date.today()
 
@@ -67,7 +67,7 @@ def scrape_currency():
     return curr_data, cols[1:]
 
 
-@st.cache
+#@st.cache
 def train_model(data, currency, period):
     df_train = data[["date(y-m-d)", currency]]
     df_train = df_train.iloc[-365*2 :]
